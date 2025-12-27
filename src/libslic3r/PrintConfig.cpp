@@ -4302,6 +4302,23 @@ void PrintConfigDef::init_fff_params()
     def->max = 100;
     def->set_default_value(new ConfigOptionFloats { 0.4 });
 
+    def = this->add("material_slot_count", coInt);
+    def->label = L("Material slot count");
+    def->tooltip = L("Number of material/filament slots available on the printer. "
+                   "For toolchangers, this is the number of tools. "
+                   "For AMS-style systems, this is the total number of slots.");
+    def->min = 1;
+    def->max = 64;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInt(4));
+
+    def = this->add("supports_filament_mapping", coBool);
+    def->label = L("Supports filament mapping");
+    def->tooltip = L("When enabled, shows a filament mapping dialog before sending print jobs. "
+                   "This allows mapping project filaments to specific printer slots.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
     def = this->add("notes", coString);
     def->label = L("Configuration notes");
     def->tooltip = L("You can put here your personal notes. This text will be added to the G-code "

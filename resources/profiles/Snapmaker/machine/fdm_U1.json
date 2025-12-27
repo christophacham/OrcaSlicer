@@ -6,6 +6,8 @@
     "instantiation": "false",
     "gcode_flavor": "klipper",
     "single_extruder_multi_material": "0",
+    "material_slot_count": "8",
+    "supports_filament_mapping": "1",
     "bed_model": "Snapmaker U1_bed.stl",
     "bed_texture": "Snapmaker U1_texture.svg",
     "max_layer_height": [

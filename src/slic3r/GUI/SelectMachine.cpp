@@ -1,5 +1,6 @@
 #include "SelectMachine.hpp"
 #include "I18N.hpp"
+#include "FilamentMappingDialog.hpp"
 
 #include "libslic3r/Utils.hpp"
 #include "libslic3r/Thread.hpp"
@@ -2417,6 +2418,49 @@ void SelectMachineDialog::on_send_print()
     // enter sending mode
     sending_mode();
     m_status_bar->enable_cancel_button();
+
+    // Show filament mapping dialog if printer supports it
+    const DynamicPrintConfig& printer_config = wxGetApp().preset_bundle->printers.get_edited_preset().config;
+    if (supports_filament_mapping_from_config(&printer_config)) {
+        int slot_count = get_material_slot_count_from_config(&printer_config);
+
+        // Build project filament info from m_filaments
+        std::vector<ProjectFilamentInfo> project_filaments;
+        for (size_t i = 0; i < m_filaments.size(); ++i) {
+            ProjectFilamentInfo pfi;
+            pfi.index = static_cast<int>(i);
+            pfi.name = m_filaments[i].type;  // Use type as name
+            pfi.type = m_filaments[i].type;
+            pfi.color = wxColour(m_filaments[i].color);
+            pfi.usage_grams = m_filaments[i].used_g;
+            project_filaments.push_back(pfi);
+        }
+
+        FilamentMappingDialog mapping_dlg(this, project_filaments, slot_count);
+
+        // Set initial mapping from current m_ams_mapping_result
+        if (!m_ams_mapping_result.empty()) {
+            std::vector<int> initial_mapping;
+            for (const auto& fi : m_ams_mapping_result) {
+                initial_mapping.push_back(fi.tray_id + 1);  // Convert 0-based to 1-based
+            }
+            mapping_dlg.set_mapping(initial_mapping);
+        }
+
+        if (mapping_dlg.ShowModal() != wxID_OK) {
+            // User cancelled - abort send
+            BOOST_LOG_TRIVIAL(info) << "print_job: filament mapping cancelled by user";
+            m_status_bar->set_status_text(_L("Cancelled"));
+            Enable_Send_Button(true);
+            return;
+        }
+
+        // Apply mapping result
+        auto mapping = mapping_dlg.get_mapping();
+        for (size_t i = 0; i < m_ams_mapping_result.size() && i < mapping.size(); ++i) {
+            m_ams_mapping_result[i].tray_id = mapping[i] - 1;  // Convert 1-based to 0-based
+        }
+    }
 
     // get ams_mapping_result
     std::string ams_mapping_array;
